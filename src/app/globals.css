@@ -1,26 +1,182 @@
 @import "tailwindcss";
 
+/* Class-based dark mode — next-themes sets class="dark" on <html> */
+@variant dark (&:where(.dark, .dark *));
+
+/* ── Design tokens ───────────────────────────────────────────────────── */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Surfaces */
+  --surface:      oklch(99%   0.005 260);
+  --card:         oklch(100%  0     0);
+  --card-hover:   oklch(97%   0.005 260);
+  --elevated:     oklch(95%   0.005 260);
+
+  /* Text */
+  --fg:           oklch(12%   0.01  260);
+  --fg-muted:     oklch(50%   0.01  260);
+  --fg-subtle:    oklch(70%   0.01  260);
+
+  /* Borders */
+  --border:       oklch(88%   0.01  260);
+  --border-focus: oklch(65%   0.22  278);
+
+  /* Brand (violet) */
+  --brand:        oklch(60%   0.22  278);
+  --brand-dim:    oklch(50%   0.22  278);
+  --brand-glow:   oklch(60%   0.22  278 / 0.25);
+
+  /* Semantic */
+  --success:      oklch(55%   0.18  160);
+  --warning:      oklch(65%   0.16  85);
+  --danger:       oklch(58%   0.20  25);
+  --info:         oklch(55%   0.16  240);
+
+  /* Rank badge colours */
+  --rank-beginner:     oklch(60%  0.14 25);   /* rust */
+  --rank-novice:       oklch(62%  0.16 55);   /* amber */
+  --rank-intermediate: oklch(60%  0.18 145);  /* green */
+  --rank-advanced:     oklch(58%  0.20 240);  /* blue */
+  --rank-elite:        oklch(60%  0.22 295);  /* purple */
 }
 
+.dark {
+  --surface:      oklch(10%   0.005 260);
+  --card:         oklch(14%   0.006 260);
+  --card-hover:   oklch(17%   0.006 260);
+  --elevated:     oklch(20%   0.007 260);
+
+  --fg:           oklch(95%   0.005 260);
+  --fg-muted:     oklch(60%   0.01  260);
+  --fg-subtle:    oklch(42%   0.01  260);
+
+  --border:       oklch(23%   0.01  260);
+  --border-focus: oklch(68%   0.22  278);
+
+  --brand:        oklch(67%   0.22  278);
+  --brand-dim:    oklch(57%   0.22  278);
+  --brand-glow:   oklch(67%   0.22  278 / 0.2);
+
+  --success:      oklch(68%   0.18  160);
+  --warning:      oklch(74%   0.16  85);
+  --danger:       oklch(64%   0.20  25);
+  --info:         oklch(65%   0.16  240);
+}
+
+/* ── Tailwind theme registration ─────────────────────────────────────── */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-surface:      var(--surface);
+  --color-card:         var(--card);
+  --color-card-hover:   var(--card-hover);
+  --color-elevated:     var(--elevated);
+  --color-fg:           var(--fg);
+  --color-fg-muted:     var(--fg-muted);
+  --color-fg-subtle:    var(--fg-subtle);
+  --color-border:       var(--border);
+  --color-border-focus: var(--border-focus);
+  --color-brand:        var(--brand);
+  --color-brand-dim:    var(--brand-dim);
+  --color-brand-glow:   var(--brand-glow);
+  --color-success:      var(--success);
+  --color-warning:      var(--warning);
+  --color-danger:       var(--danger);
+  --color-info:         var(--info);
+  --color-rank-beginner:     var(--rank-beginner);
+  --color-rank-novice:       var(--rank-novice);
+  --color-rank-intermediate: var(--rank-intermediate);
+  --color-rank-advanced:     var(--rank-advanced);
+  --color-rank-elite:        var(--rank-elite);
+
+  /* Font family */
+  --font-sans: var(--font-geist-sans), system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), monospace;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/* ── Base styles ─────────────────────────────────────────────────────── */
+@layer base {
+  html {
+    color-scheme: dark light;
+  }
+
+  body {
+    background-color: var(--surface);
+    color: var(--fg);
+    font-family: var(--font-geist-sans), system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  * {
+    border-color: var(--border);
+  }
+
+  /* Scrollbar styling */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 9999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--fg-subtle);
+  }
+
+  /* Focus ring */
+  :focus-visible {
+    outline: 2px solid var(--border-focus);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  /* Input resets */
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* ── Utilities ───────────────────────────────────────────────────────── */
+@layer utilities {
+  .glass {
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    background: oklch(from var(--card) l c h / 0.7);
+    border: 1px solid oklch(from var(--border) l c h / 0.5);
+  }
+
+  .brand-gradient {
+    background: linear-gradient(135deg, var(--brand) 0%, oklch(55% 0.24 310) 100%);
+  }
+
+  .animate-in {
+    animation: fade-in 0.2s ease forwards;
+  }
+
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes count-up {
+  from { opacity: 0; transform: scale(0.8); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes pulse-ring {
+  0%   { transform: scale(1); opacity: 1; }
+  100% { transform: scale(1.5); opacity: 0; }
 }
