@@ -4,62 +4,88 @@
 @variant dark (&:where(.dark, .dark *));
 
 /* ── Design tokens ───────────────────────────────────────────────────── */
+
+/*
+  PALETTE: Carbon Lime
+  To switch to Void Violet, replace every .dark block's vars:
+    --brand: oklch(68% 0.26 295)  (violet)
+    --surface: oklch(6% 0.01 275)
+    etc.
+*/
+
 :root {
-  /* Surfaces */
-  --surface:      oklch(99%   0.005 260);
+  /* Light mode — minimal, barely used (app is dark-first) */
+  --surface:      oklch(98%   0.002 60);
   --card:         oklch(100%  0     0);
-  --card-hover:   oklch(97%   0.005 260);
-  --elevated:     oklch(95%   0.005 260);
+  --card-hover:   oklch(96%   0.003 60);
+  --elevated:     oklch(93%   0.004 60);
 
-  /* Text */
-  --fg:           oklch(12%   0.01  260);
-  --fg-muted:     oklch(50%   0.01  260);
-  --fg-subtle:    oklch(70%   0.01  260);
+  --fg:           oklch(10%   0.005 60);
+  --fg-muted:     oklch(45%   0.006 60);
+  --fg-subtle:    oklch(68%   0.005 60);
 
-  /* Borders */
-  --border:       oklch(88%   0.01  260);
-  --border-focus: oklch(65%   0.22  278);
+  --border:       oklch(85%   0.006 60);
+  --border-focus: oklch(60%   0.22  128);
 
-  /* Brand (violet) */
-  --brand:        oklch(60%   0.22  278);
-  --brand-dim:    oklch(50%   0.22  278);
-  --brand-glow:   oklch(60%   0.22  278 / 0.25);
+  /* Lime accent */
+  --brand:        oklch(82%   0.22  128);
+  --brand-dim:    oklch(70%   0.20  128);
+  --brand-glow:   oklch(82%   0.22  128 / 0.2);
 
-  /* Semantic */
   --success:      oklch(55%   0.18  160);
   --warning:      oklch(65%   0.16  85);
   --danger:       oklch(58%   0.20  25);
   --info:         oklch(55%   0.16  240);
 
-  /* Rank badge colours */
-  --rank-beginner:     oklch(60%  0.14 25);   /* rust */
-  --rank-novice:       oklch(62%  0.16 55);   /* amber */
-  --rank-intermediate: oklch(60%  0.18 145);  /* green */
-  --rank-advanced:     oklch(58%  0.20 240);  /* blue */
-  --rank-elite:        oklch(60%  0.22 295);  /* purple */
+  --rank-beginner:     oklch(60%  0.14 25);
+  --rank-novice:       oklch(62%  0.16 55);
+  --rank-intermediate: oklch(60%  0.18 145);
+  --rank-advanced:     oklch(58%  0.20 240);
+  --rank-elite:        oklch(65%  0.22 128);  /* elite = lime */
 }
 
 .dark {
-  --surface:      oklch(10%   0.005 260);
-  --card:         oklch(14%   0.006 260);
-  --card-hover:   oklch(17%   0.006 260);
-  --elevated:     oklch(20%   0.007 260);
+  /* Carbon base — near-black with trace of warmth */
+  --surface:      oklch(7%    0.002 60);
+  --card:         oklch(10%   0.003 60);
+  --card-hover:   oklch(13%   0.003 60);
+  --elevated:     oklch(16%   0.004 60);
 
-  --fg:           oklch(95%   0.005 260);
-  --fg-muted:     oklch(60%   0.01  260);
-  --fg-subtle:    oklch(42%   0.01  260);
+  --fg:           oklch(97%   0.002 60);
+  --fg-muted:     oklch(60%   0.004 60);
+  --fg-subtle:    oklch(38%   0.003 60);
 
-  --border:       oklch(23%   0.01  260);
-  --border-focus: oklch(68%   0.22  278);
+  --border:       oklch(20%   0.004 60);
+  --border-focus: oklch(89%   0.23  128);
 
-  --brand:        oklch(67%   0.22  278);
-  --brand-dim:    oklch(57%   0.22  278);
-  --brand-glow:   oklch(67%   0.22  278 / 0.2);
+  /* Electric lime */
+  --brand:        oklch(89%   0.23  128);
+  --brand-dim:    oklch(76%   0.20  128);
+  --brand-glow:   oklch(89%   0.23  128 / 0.15);
 
   --success:      oklch(68%   0.18  160);
   --warning:      oklch(74%   0.16  85);
   --danger:       oklch(64%   0.20  25);
   --info:         oklch(65%   0.16  240);
+
+  --rank-beginner:     oklch(60%  0.14 25);
+  --rank-novice:       oklch(64%  0.16 55);
+  --rank-intermediate: oklch(65%  0.18 145);
+  --rank-advanced:     oklch(62%  0.20 240);
+  --rank-elite:        oklch(89%  0.23 128);   /* elite = lime */
+}
+
+/* ── Motion tokens ───────────────────────────────────────────────────── */
+:root {
+  --dur-instant:  100ms;
+  --dur-fast:     200ms;
+  --dur-medium:   350ms;
+  --dur-slow:     500ms;
+  --dur-dramatic: 800ms;
+
+  --ease-out:  cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in:   cubic-bezier(0.4, 0, 1, 1);
+  --ease-inout: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* ── Tailwind theme registration ─────────────────────────────────────── */
@@ -86,9 +112,10 @@
   --color-rank-advanced:     var(--rank-advanced);
   --color-rank-elite:        var(--rank-elite);
 
-  /* Font family */
-  --font-sans: var(--font-geist-sans), system-ui, sans-serif;
-  --font-mono: var(--font-geist-mono), monospace;
+  /* Fonts */
+  --font-sans:   var(--font-space-grotesk), system-ui, sans-serif;
+  --font-mono:   var(--font-geist-mono), monospace;
+  --font-display: var(--font-bebas-neue), var(--font-space-grotesk), sans-serif;
 }
 
 /* ── Base styles ─────────────────────────────────────────────────────── */
@@ -100,39 +127,32 @@
   body {
     background-color: var(--surface);
     color: var(--fg);
-    font-family: var(--font-geist-sans), system-ui, sans-serif;
+    font-family: var(--font-space-grotesk), system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    letter-spacing: -0.01em;
   }
 
   * {
     border-color: var(--border);
   }
 
-  /* Scrollbar styling */
-  ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
-  }
-  ::-webkit-scrollbar-track {
-    background: transparent;
-  }
-  ::-webkit-scrollbar-thumb {
-    background: var(--border);
-    border-radius: 9999px;
-  }
-  ::-webkit-scrollbar-thumb:hover {
-    background: var(--fg-subtle);
+  h1, h2, h3, h4, h5, h6 {
+    letter-spacing: -0.025em;
+    font-weight: 700;
   }
 
-  /* Focus ring */
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 9999px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--fg-subtle); }
+
   :focus-visible {
     outline: 2px solid var(--border-focus);
     outline-offset: 2px;
     border-radius: 4px;
   }
 
-  /* Input resets */
   input[type="number"]::-webkit-inner-spin-button,
   input[type="number"]::-webkit-outer-spin-button {
     -webkit-appearance: none;
@@ -141,42 +161,114 @@
 
 /* ── Utilities ───────────────────────────────────────────────────────── */
 @layer utilities {
+  /* Glass morphism */
   .glass {
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    background: oklch(from var(--card) l c h / 0.7);
+    backdrop-filter: blur(16px) saturate(1.4);
+    -webkit-backdrop-filter: blur(16px) saturate(1.4);
+    background: oklch(from var(--card) l c h / 0.6);
     border: 1px solid oklch(from var(--border) l c h / 0.5);
   }
 
+  /* Lime gradient for primary buttons / hero accents */
   .brand-gradient {
-    background: linear-gradient(135deg, var(--brand) 0%, oklch(55% 0.24 310) 100%);
+    background: linear-gradient(
+      135deg,
+      oklch(89% 0.23 128) 0%,
+      oklch(82% 0.21 110) 100%
+    );
   }
 
-  .animate-in {
-    animation: fade-in 0.2s ease forwards;
+  /* Dark grain overlay — add to a ::after pseudo-element */
+  .grain::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+    background-size: 200px 200px;
+    opacity: 0.03;
+    border-radius: inherit;
   }
 
-  .text-balance {
-    text-wrap: balance;
+  /* Gradient mesh backgrounds */
+  .mesh-bg {
+    background:
+      radial-gradient(ellipse 60% 50% at 10% 0%,  oklch(89% 0.23 128 / 0.07) 0%, transparent 70%),
+      radial-gradient(ellipse 40% 60% at 90% 100%, oklch(89% 0.23 128 / 0.04) 0%, transparent 70%),
+      var(--surface);
   }
+
+  .mesh-bg-strong {
+    background:
+      radial-gradient(ellipse 80% 60% at 5%  0%,   oklch(89% 0.23 128 / 0.14) 0%, transparent 60%),
+      radial-gradient(ellipse 50% 70% at 95% 100%,  oklch(89% 0.23 128 / 0.08) 0%, transparent 60%),
+      radial-gradient(ellipse 40% 40% at 50% 50%,   oklch(10% 0 0 / 0.5) 0%, transparent 100%),
+      var(--surface);
+  }
+
+  /* Display / hero font class */
+  .font-display {
+    font-family: var(--font-display);
+  }
+
+  /* Glow effects */
+  .glow-brand {
+    box-shadow: 0 0 24px oklch(89% 0.23 128 / 0.25), 0 0 48px oklch(89% 0.23 128 / 0.1);
+  }
+
+  .glow-brand-text {
+    text-shadow: 0 0 20px oklch(89% 0.23 128 / 0.5);
+  }
+
+  /* Elevation shadows */
+  .shadow-card {
+    box-shadow: 0 1px 3px oklch(0% 0 0 / 0.4), 0 4px 12px oklch(0% 0 0 / 0.2);
+  }
+
+  .shadow-float {
+    box-shadow: 0 8px 32px oklch(0% 0 0 / 0.5), 0 2px 8px oklch(0% 0 0 / 0.3);
+  }
+
+  .text-balance { text-wrap: balance; }
+  .animate-in { animation: fade-in 0.2s var(--ease-out) forwards; }
 }
 
+/* ── Keyframes ───────────────────────────────────────────────────────── */
 @keyframes fade-in {
-  from { opacity: 0; transform: translateY(4px); }
+  from { opacity: 0; transform: translateY(6px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes slide-up {
-  from { opacity: 0; transform: translateY(16px); }
+  from { opacity: 0; transform: translateY(20px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 
-@keyframes count-up {
-  from { opacity: 0; transform: scale(0.8); }
-  to   { opacity: 1; transform: scale(1); }
+@keyframes slide-in-right {
+  from { opacity: 0; transform: translateX(20px); }
+  to   { opacity: 1; transform: translateX(0); }
 }
 
 @keyframes pulse-ring {
-  0%   { transform: scale(1); opacity: 1; }
-  100% { transform: scale(1.5); opacity: 0; }
+  0%   { transform: scale(1); opacity: 0.8; }
+  100% { transform: scale(1.8); opacity: 0; }
+}
+
+@keyframes shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+/* ── Reduced motion ──────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

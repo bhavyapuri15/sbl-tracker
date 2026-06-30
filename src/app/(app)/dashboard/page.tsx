@@ -1,140 +1,135 @@
 import type { Metadata } from "next"
 import { createClient } from "@/lib/supabase/server"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/Card"
-import { Badge } from "@/components/ui/Badge"
-import { Dumbbell, TrendingUp, Apple, Zap, ChevronRight } from "lucide-react"
-import Link from "next/link"
+import { DashboardClient } from "./DashboardClient"
+import { computeSuggestions } from "@/lib/suggestions"
+import type { Goal } from "@/types/domain"
+import type { Suggestion } from "@/types/domain"
 
 export const metadata: Metadata = { title: "Dashboard" }
 
-const QUICK_ACTIONS = [
-  {
-    href: "/workout/new",
-    icon: Dumbbell,
-    label: "Start Workout",
-    description: "Log today's session",
-    color: "text-brand",
-    bg: "bg-brand/10",
-  },
-  {
-    href: "/nutrition",
-    icon: Apple,
-    label: "Log Food",
-    description: "Track your macros",
-    color: "text-success",
-    bg: "bg-success/10",
-  },
-  {
-    href: "/progress",
-    icon: TrendingUp,
-    label: "View Progress",
-    description: "Charts & strength rank",
-    color: "text-warning",
-    bg: "bg-warning/10",
-  },
-]
+type PRDateRow = { e1rm_kg: number; achieved_at: string; exercises: { name: string } | null }
+type WeekWE = { id: string; exercises: { primary_muscles: string[] } | null }
 
 export default async function DashboardPage() {
   const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const { data: { user } } = await supabase.auth.getUser()
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("display_name")
-    .eq("id", user!.id)
-    .single()
+  const now = new Date()
+  const weekAgo  = new Date(now); weekAgo.setDate(now.getDate() - 7)
+  const twoWeeks = new Date(now); twoWeeks.setDate(now.getDate() - 14)
 
+  // ── Parallel tier-1 fetches ─────────────────────────────────────────
+  const [
+    { data: profile },
+    { data: recentSessions },
+    { data: rawPRs },
+    { data: recentMetric },
+    { data: weightMetrics },
+    { data: weekSessions },
+  ] = await Promise.all([
+    supabase
+      .from("profiles")
+      .select("display_name, goal, activity_level, sex")
+      .eq("id", user!.id)
+      .single(),
+    supabase
+      .from("workout_sessions")
+      .select("id, name, started_at, ended_at")
+      .eq("user_id", user!.id)
+      .eq("is_template", false)
+      .not("ended_at", "is", null)
+      .gte("started_at", weekAgo.toISOString())
+      .order("started_at", { ascending: false }),
+    supabase
+      .from("personal_records")
+      .select("e1rm_kg, achieved_at, exercises(name)")
+      .eq("user_id", user!.id)
+      .order("e1rm_kg", { ascending: false })
+      .limit(5),
+    supabase
+      .from("body_metrics")
+      .select("weight_kg, logged_at")
+      .eq("user_id", user!.id)
+      .not("weight_kg", "is", null)
+      .order("logged_at", { ascending: false })
+      .limit(1),
+    supabase
+      .from("body_metrics")
+      .select("logged_at, weight_kg")
+      .eq("user_id", user!.id)
+      .gte("logged_at", twoWeeks.toISOString())
+      .order("logged_at", { ascending: true }),
+    supabase
+      .from("workout_sessions")
+      .select("id")
+      .eq("user_id", user!.id)
+      .eq("is_template", false)
+      .gte("started_at", weekAgo.toISOString())
+      .not("ended_at", "is", null),
+  ])
+
+  // ── Weekly volume (2 more queries) ───────────────────────────────────
+  const weekSessionIds = (weekSessions ?? []).map((s: { id: string }) => s.id)
+  let weeklyVolume: Record<string, number> = {}
+
+  if (weekSessionIds.length > 0) {
+    const { data: rawWeekWEs } = await supabase
+      .from("workout_exercises")
+      .select("id, exercises(primary_muscles)")
+      .in("session_id", weekSessionIds)
+
+    const weekWEs = (rawWeekWEs ?? []) as unknown as WeekWE[]
+    const weekWeIds = weekWEs.map(w => w.id)
+    const weToMuscles = Object.fromEntries(weekWEs.map(w => [w.id, w.exercises?.primary_muscles ?? []]))
+
+    if (weekWeIds.length > 0) {
+      const { data: weekSets } = await supabase
+        .from("workout_sets")
+        .select("workout_exercise_id")
+        .in("workout_exercise_id", weekWeIds)
+        .eq("set_type", "working")
+
+      for (const s of (weekSets ?? []) as Array<{ workout_exercise_id: string }>) {
+        for (const m of weToMuscles[s.workout_exercise_id] ?? []) {
+          weeklyVolume[m] = (weeklyVolume[m] ?? 0) + 1
+        }
+      }
+    }
+  }
+
+  // ── Compute suggestions ──────────────────────────────────────────────
+  const prsWithDates = (rawPRs as unknown as PRDateRow[] | null ?? [])
+    .filter(pr => pr.exercises !== null)
+    .map(pr => ({ exerciseName: pr.exercises!.name, achievedAt: pr.achieved_at }))
+
+  const suggestions: Suggestion[] = computeSuggestions({
+    prs: prsWithDates,
+    weeklyVolume,
+    weightMetrics: weightMetrics ?? [],
+    goal: (profile?.goal ?? null) as Goal | null,
+  })
+
+  // ── Dashboard summary values ─────────────────────────────────────────
   const firstName = profile?.display_name?.split(" ")[0] ?? "Athlete"
+  const workoutsThisWeek = recentSessions?.length ?? 0
+
+  const firstPR = (rawPRs as unknown as PRDateRow[] | null)?.[0]
+  type PRRow = { e1rm_kg: number; exercises: { name: string } | null }
+  const topPR = firstPR as PRRow | undefined
+  const bestE1rm = topPR?.e1rm_kg ?? null
+  const bestE1rmExercise = (topPR?.exercises as { name: string } | null)?.name ?? null
+
+  const currentWeight = recentMetric?.[0]?.weight_kg ?? null
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-fg">
-          Hey, {firstName} 👋
-        </h1>
-        <p className="mt-1 text-sm text-fg-muted">
-          Ready to train? Here&apos;s your overview.
-        </p>
-      </div>
-
-      {/* Quick actions */}
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        {QUICK_ACTIONS.map(({ href, icon: Icon, label, description, color, bg }) => (
-          <Link key={href} href={href} className="group">
-            <Card className="h-full transition-colors hover:border-brand/40 hover:bg-card-hover cursor-pointer">
-              <CardContent className="flex items-center gap-4 p-4">
-                <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${bg}`}>
-                  <Icon className={`h-5 w-5 ${color}`} strokeWidth={1.8} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-fg group-hover:text-brand transition-colors">
-                    {label}
-                  </p>
-                  <p className="text-xs text-fg-muted mt-0.5">{description}</p>
-                </div>
-                <ChevronRight className="h-4 w-4 text-fg-subtle shrink-0 group-hover:translate-x-0.5 transition-transform" />
-              </CardContent>
-            </Card>
-          </Link>
-        ))}
-      </div>
-
-      {/* Stats row (empty state) */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        {[
-          { label: "Workouts this week", value: "—", sub: "Start logging" },
-          { label: "Best squat e1RM",    value: "—", sub: "No data yet" },
-          { label: "Avg. daily calories", value: "—", sub: "Start logging" },
-          { label: "Current weight",      value: "—", sub: "Log first weigh-in" },
-        ].map(({ label, value, sub }) => (
-          <Card key={label}>
-            <CardContent className="p-4">
-              <p className="text-xs text-fg-muted">{label}</p>
-              <p className="mt-1 text-2xl font-bold text-fg">{value}</p>
-              <p className="mt-0.5 text-xs text-fg-subtle">{sub}</p>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      {/* Getting started card */}
-      <Card className="border-brand/20 bg-brand/5">
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <Zap className="h-4 w-4 text-brand" />
-            <CardTitle className="text-brand">Getting started</CardTitle>
-          </div>
-          <CardDescription>
-            Complete these steps to unlock all features.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          {[
-            { label: "Set up your profile (sex, height, activity level)", href: "/profile" },
-            { label: "Log your first weigh-in", href: "/progress" },
-            { label: "Start your first workout", href: "/workout/new" },
-            { label: "Set your nutrition goals", href: "/nutrition" },
-          ].map(({ label, href }) => (
-            <Link
-              key={label}
-              href={href}
-              className="flex items-center gap-3 rounded-lg p-2 hover:bg-brand/10 transition-colors"
-            >
-              <div className="h-5 w-5 rounded-full border-2 border-brand/40 shrink-0" />
-              <span className="text-sm text-fg">{label}</span>
-              <ChevronRight className="h-3.5 w-3.5 text-fg-muted ml-auto shrink-0" />
-            </Link>
-          ))}
-        </CardContent>
-      </Card>
-
-      <p className="text-xs text-fg-subtle text-center">
-        <Badge variant="default" size="sm">Disclaimer</Badge>{" "}
-        Calorie and macro suggestions are for informational purposes only — not medical or nutrition advice.
-      </p>
-    </div>
+    <DashboardClient
+      firstName={firstName}
+      workoutsThisWeek={workoutsThisWeek}
+      bestE1rm={bestE1rm}
+      bestE1rmExercise={bestE1rmExercise}
+      currentWeight={currentWeight}
+      goal={(profile?.goal ?? null) as Goal | null}
+      suggestions={suggestions}
+    />
   )
 }

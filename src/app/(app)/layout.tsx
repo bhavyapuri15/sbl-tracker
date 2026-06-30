@@ -4,6 +4,7 @@ import { AppNav } from "@/components/layout/AppNav"
 import { BottomNav } from "@/components/layout/BottomNav"
 import { TopBar } from "@/components/layout/TopBar"
 import { PageTransition } from "@/components/layout/PageTransition"
+import { QueueFlusher } from "@/components/QueueFlusher"
 
 export default async function AppLayout({
   children,
@@ -34,6 +35,7 @@ export default async function AppLayout({
 
       {/* Mobile bottom nav */}
       <BottomNav />
+      <QueueFlusher />
     </div>
   )
 }

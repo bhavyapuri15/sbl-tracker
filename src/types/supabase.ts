@@ -189,25 +189,61 @@ export interface Database {
       }
       workout_sessions: {
         Row: WorkoutSessionRow
-        Insert: Omit<WorkoutSessionRow, "id" | "created_at"> & { id?: string }
+        Insert: {
+          id?: string
+          user_id: string
+          name?: string | null
+          notes?: string | null
+          started_at: string
+          ended_at?: string | null
+          is_template: boolean
+          template_id?: string | null
+        }
         Update: Partial<WorkoutSessionRow>
         Relationships: []
       }
       workout_exercises: {
         Row: WorkoutExerciseRow
-        Insert: Omit<WorkoutExerciseRow, "id"> & { id?: string }
+        Insert: {
+          id?: string
+          session_id: string
+          exercise_id: string
+          order_index: number
+          notes?: string | null
+        }
         Update: Partial<WorkoutExerciseRow>
         Relationships: []
       }
       workout_sets: {
         Row: WorkoutSetRow
-        Insert: Omit<WorkoutSetRow, "id"> & { id?: string }
+        Insert: {
+          id?: string
+          workout_exercise_id: string
+          set_number: number
+          weight_kg?: number | null
+          reps?: number | null
+          rir?: number | null
+          rpe?: number | null
+          set_type: "warmup" | "working" | "drop" | "failure"
+          e1rm_kg?: number | null
+          is_pr?: boolean
+          logged_at?: string
+        }
         Update: Partial<WorkoutSetRow>
         Relationships: []
       }
       personal_records: {
         Row: PersonalRecordRow
-        Insert: Omit<PersonalRecordRow, "id"> & { id?: string }
+        Insert: {
+          id?: string
+          user_id: string
+          exercise_id: string
+          e1rm_kg: number
+          weight_kg: number
+          reps: number
+          achieved_at: string
+          set_id?: string | null
+        }
         Update: Partial<PersonalRecordRow>
         Relationships: []
       }

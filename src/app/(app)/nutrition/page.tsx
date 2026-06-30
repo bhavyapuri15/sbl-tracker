@@ -1,42 +1,56 @@
 import type { Metadata } from "next"
-import { Apple, Plus } from "lucide-react"
-import { Button } from "@/components/ui/Button"
+import { redirect } from "next/navigation"
+import { createClient } from "@/lib/supabase/server"
+import { NutritionClient } from "./NutritionClient"
+import type { FoodEntry, NutritionGoal } from "@/types/domain"
 
 export const metadata: Metadata = { title: "Nutrition" }
 
-export default function NutritionPage() {
+export default async function NutritionPage() {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) redirect("/login")
+
+  // Today's date range (local midnight → midnight)
+  const now = new Date()
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString()
+  const todayEnd   = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1).toISOString()
+
+  const [goalRes, entriesRes] = await Promise.all([
+    supabase
+      .from("nutrition_goals")
+      .select("*")
+      .eq("user_id", user.id)
+      .lte("effective_from", now.toISOString().split("T")[0])
+      .order("effective_from", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+    supabase
+      .from("food_entries")
+      .select("*")
+      .eq("user_id", user.id)
+      .gte("logged_at", todayStart)
+      .lt("logged_at", todayEnd)
+      .order("logged_at", { ascending: true }),
+  ])
+
+  const goal = goalRes.data as NutritionGoal | null
+  const entries = (entriesRes.data ?? []) as FoodEntry[]
+
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-fg">Nutrition</h1>
-          <p className="mt-1 text-sm text-fg-muted">Calories, macros, and weekly adjustments</p>
-        </div>
-        <Button size="sm">
-          <Plus className="h-4 w-4" />
-          Log food
-        </Button>
-      </div>
-
-      <div className="flex flex-col items-center justify-center py-20 gap-4 text-center">
-        <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-elevated">
-          <Apple className="h-8 w-8 text-fg-muted" strokeWidth={1.5} />
-        </div>
-        <div>
-          <p className="text-base font-semibold text-fg">No food logged today</p>
-          <p className="mt-1 text-sm text-fg-muted max-w-xs">
-            Track your calories and macros to get science-based adjustments based on your weight trend.
+    <div className="space-y-8">
+      <div>
+        <p className="text-xs font-bold uppercase tracking-widest text-brand mb-1">Daily</p>
+        <h1 className="font-display text-4xl leading-none text-fg">NUTRITION<br />TODAY.</h1>
+        {goal && (
+          <p className="mt-2 text-sm text-fg-muted">
+            Target {goal.calories_target?.toLocaleString()} kcal · {goal.protein_g}g P · {goal.carbs_g}g C · {goal.fat_g}g F
           </p>
-        </div>
-        <Button>
-          <Plus className="h-4 w-4" />
-          Log first meal
-        </Button>
+        )}
       </div>
-
-      <p className="text-xs text-fg-subtle text-center">
-        Calorie and macro targets are for informational purposes only — not medical or nutrition advice.
-      </p>
+      <NutritionClient goal={goal} entries={entries} />
     </div>
   )
 }
